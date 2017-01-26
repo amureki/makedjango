@@ -1,0 +1,7 @@
+dj-database-url
+Django
+django-cache-url
+django-configurations
+django-extensions
+django-model-utils
+psycopg2
