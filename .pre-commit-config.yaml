@@ -1,21 +1,33 @@
 -   repo: git@github.com:pre-commit/pre-commit-hooks
-    sha: v0.7.0
+    sha: v1.1.1
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: debug-statements
-    -   id: flake8
-        args:
-        - --max-line-length=99
-        - --exclude=*/migrations/*
     -   id: check-added-large-files
--   repo: git://github.com/FalconSocial/pre-commit-mirrors-pep257
-    sha: 149e61b7a717945143fe51f010fe1c576e729a9f
+-   repo: local
     hooks:
-    -   id: pep257
-        args:
-        - --ignore=D100,D101,D102,D103,D104,D105,D203
--   repo: git://github.com/FalconSocial/pre-commit-python-sorter
-    sha: 5991d2aea26858d3c3538e0b4e09255b6b99413e
-    hooks:
-    -   id: python-import-sorter
+    -   id: pydocstyle
+        name: pydocstyle
+        entry: pydocstyle
+        language: system
+        types:
+        - python
+    -   id: pycodestyle
+        name: pycodestyle
+        entry: pycodestyle
+        language: system
+        types:
+        - python
+    -   id: isort
+        name: isort
+        entry: isort
+        language: system
+        types:
+        - python
+    -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types:
+        - python
