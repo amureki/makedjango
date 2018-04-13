@@ -14,13 +14,9 @@ class Common(Configuration):
     ALLOWED_HOSTS = []
 
     CACHES = {
-            'default': django_cache_url.parse(
-                os.getenv('CACHE_URL', 'locmem://cache')
-            ),
-            'sessions': django_cache_url.parse(
-                os.getenv('SESSIONS_URL', 'locmem://sessions')
-            ),
-        }
+        'default': django_cache_url.parse(os.getenv('CACHE_URL', 'redis://127.0.0.1:6379/0')),
+        'sessions': django_cache_url.parse(os.getenv('SESSIONS_URL', 'redis://127.0.0.1:6379/1')),
+    }
 
     DATABASES = values.DatabaseURLValue(
         default='postgres://localhost/{{ project_name }}',
@@ -28,56 +24,43 @@ class Common(Configuration):
         conn_max_age=500,
     )
 
-    DEBUG = True
+    DEBUG = False
 
     INSTALLED_APPS = [
+        'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
         'django.contrib.sessions',
-        'django.contrib.sites',
         'django.contrib.messages',
-        'django.contrib.staticfiles',
-        'django.contrib.humanize',
-        'django.contrib.admin',
         'django.contrib.postgres',
+        'django.contrib.staticfiles',
 
         'django_extensions',
+
+        '{{ project_name }}.users',
     ]
 
     LANGUAGE_CODE = 'en-us'
-
-    MEDIA_URL = values.Value(default='/media/', environ_prefix='')
-    MEDIA_ROOT = os.path.join(BASE_DIR, '_media')
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
         'django.middleware.csrf.CsrfViewMiddleware',
-        'django.middleware.locale.LocaleMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ]
 
-    PASSWORD_HASHERS = [
-        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    ]
+    ROOT_URLCONF = '{{ project_name }}.urls'
 
-    ROOT_URLCONF = 'base.urls'
+    SECRET_KEY = values.SecretValue()
 
     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
     SESSION_CACHE_ALIAS = 'sessions'
 
-    SITE_ID = 1
-
-    STATIC_URL = values.Value(default='/static/', environ_prefix='')
+    STATIC_URL = '/static/'
     STATIC_ROOT = os.path.join(BASE_DIR, '_static')
-
-    STATICFILES_FINDERS = (
-        'django.contrib.staticfiles.finders.FileSystemFinder',
-        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    )
 
     TEMPLATES = [
         {
@@ -86,14 +69,10 @@ class Common(Configuration):
             'APP_DIRS': True,
             'OPTIONS': {
                 'context_processors': [
-                    'django.contrib.auth.context_processors.auth',
                     'django.template.context_processors.debug',
-                    'django.template.context_processors.i18n',
-                    'django.template.context_processors.static',
-                    'django.template.context_processors.media',
-                    'django.contrib.messages.context_processors.messages',
                     "django.template.context_processors.request",
-                    "django.template.context_processors.tz",
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
                     "django.template.context_processors.csrf",
                 ],
             },
@@ -101,11 +80,48 @@ class Common(Configuration):
     ]
 
     TIME_ZONE = 'Europe/Berlin'
-
     USE_I18N = True
-
-    USE_L10N = False
-
+    USE_L10N = True
     USE_TZ = True
 
-    WSGI_APPLICATION = 'base.wsgi.application'
+    WSGI_APPLICATION = '{{ project_name }}.wsgi.application'
+
+    AUTH_PASSWORD_VALIDATORS = [
+        {
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        },
+    ]
+
+    AUTH_USER_MODEL = 'users.User'
+
+
+class Development(Common):
+    DEBUG = True
+
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+    INSTALLED_APPS = Common.INSTALLED_APPS + ['debug_toolbar']
+
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + Common.MIDDLEWARE
+
+
+class Test(Common):
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+
+    SECRET_KEY = 'secret_key'
+
+
+class Production(Common):
+    SECURE_BROWSER_XSS_FILTER = True
+    SESSION_COOKIE_SECURE = True
