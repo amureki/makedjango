@@ -10,7 +10,6 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -38,7 +37,7 @@ env
 
 # py.test cache
 .cache
+.pytest_cache/
 
 # debuging maps
 *.map
-
