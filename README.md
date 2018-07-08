@@ -5,7 +5,7 @@ Django project template for a quick prototyping.
 ## Installation
 
 ```bash
-$ ./manage.py startproject \
+$ django-admin startproject \
   --template=https://github.com/amureki/makedjango/archive/master.zip \
   --extension=py,md,env \
   project_name
