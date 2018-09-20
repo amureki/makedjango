@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 
-import django_cache_url
-
+import environ
 from configurations import Configuration, values
+
+env = environ.Env()
 
 
 class Common(Configuration):
@@ -14,15 +15,13 @@ class Common(Configuration):
     ALLOWED_HOSTS = []
 
     CACHES = {
-        'default': django_cache_url.parse(os.getenv('CACHE_URL', 'redis://127.0.0.1:6379/0')),
-        'sessions': django_cache_url.parse(os.getenv('SESSIONS_URL', 'redis://127.0.0.1:6379/1')),
+        'default': env.cache('CACHE_URL', 'redis://127.0.0.1:6379/0'),
+        'sessions': env.cache('SESSIONS_URL', 'redis://127.0.0.1:6379/1'),
     }
 
-    DATABASES = values.DatabaseURLValue(
-        default='postgres://localhost/{{ project_name }}',
-        # django-configurations maps this to the caster (which is dj_database_url)
-        conn_max_age=500,
-    )
+    DATABASES = {
+        'default': env.db(default='postgres://localhost/{{ project_name }}?conn_max_age=500'),
+    }
 
     DEBUG = False
 
@@ -125,3 +124,8 @@ class Test(Common):
 class Production(Common):
     SECURE_BROWSER_XSS_FILTER = True
     SESSION_COOKIE_SECURE = True
+
+    MIDDLEWARE = [
+        'django.middleware.http.ConditionalGetMiddleware',
+        'django.middleware.gzip.GZipMiddleware',
+    ] + Common.MIDDLEWARE
