@@ -9,6 +9,7 @@ $ django-admin startproject \
   --template=https://github.com/amureki/makedjango/archive/master.zip \
   --extension=py,md,env \
   project_name
+$ cd project_name
 $ mv example.env .env
 $ pipenv install --dev
 ```
