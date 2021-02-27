@@ -1,16 +1,17 @@
-import os
 from pathlib import Path
 
 import environ
+import sentry_sdk
 from configurations import Configuration, values
+from django.urls import reverse_lazy
+from sentry_sdk.integrations.django import DjangoIntegration
 
 env = environ.Env()
 
 
 class Common(Configuration):
-    PROJECT_PACKAGE = Path(__file__).resolve().parent.parent
-
-    BASE_DIR = PROJECT_PACKAGE.parent
+    PROJECT_ROOT = Path(__file__).resolve(strict=True).parent
+    BASE_DIR = PROJECT_ROOT.parent
 
     ALLOWED_HOSTS = []
 
@@ -33,10 +34,13 @@ class Common(Configuration):
         'django.contrib.messages',
         'django.contrib.postgres',
         'django.contrib.staticfiles',
+        "django.contrib.sites",
+        "django.contrib.humanize",
 
         'django_extensions',
 
-        '{{ project_name }}.users',
+        'core',
+        'users',
     ]
 
     LANGUAGE_CODE = 'en-us'
@@ -51,27 +55,31 @@ class Common(Configuration):
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ]
 
-    ROOT_URLCONF = '{{ project_name }}.urls'
+    ROOT_URLCONF = 'core.urls'
 
     SECRET_KEY = values.SecretValue()
 
     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
     SESSION_CACHE_ALIAS = 'sessions'
 
-    STATIC_URL = '/static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, '_static')
+    SITE_ID = 1
+    SITE_URL = env("SITE_URL", default="https://example.com/")
+
+    STATIC_ROOT = BASE_DIR / "_static"
+    STATIC_URL = "/static/"
+    STATICFILES_DIRS = [BASE_DIR / "static"]
 
     TEMPLATES = [
         {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
-            'APP_DIRS': True,
-            'OPTIONS': {
-                'context_processors': [
-                    'django.template.context_processors.debug',
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [BASE_DIR / "templates"],
+            "APP_DIRS": True,
+            "OPTIONS": {
+                "context_processors": [
+                    "django.template.context_processors.debug",
                     "django.template.context_processors.request",
-                    'django.contrib.auth.context_processors.auth',
-                    'django.contrib.messages.context_processors.messages',
+                    "django.contrib.auth.context_processors.auth",
+                    "django.contrib.messages.context_processors.messages",
                     "django.template.context_processors.csrf",
                 ],
             },
@@ -83,7 +91,7 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
-    WSGI_APPLICATION = '{{ project_name }}.wsgi.application'
+    WSGI_APPLICATION = 'core.wsgi.application'
 
     AUTH_PASSWORD_VALIDATORS = [
         {
@@ -102,15 +110,23 @@ class Common(Configuration):
 
     AUTH_USER_MODEL = 'users.User'
 
+    sentry_sdk.init(
+        dsn=env("SENTRY_DSN", default=""),
+        integrations=[DjangoIntegration()],
+    )
+
 
 class Development(Common):
+    ALLOWED_HOSTS = ["*"]
     DEBUG = True
 
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
     INSTALLED_APPS = Common.INSTALLED_APPS + ['debug_toolbar']
+    INTERNAL_IPS = ("127.0.0.1",)
 
-    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + Common.MIDDLEWARE
+    MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware"] + Common.MIDDLEWARE
+    SECRET_KEY = "secret_key"
 
 
 class Test(Common):
@@ -118,14 +134,26 @@ class Test(Common):
         'django.contrib.auth.hashers.MD5PasswordHasher',
     ]
 
-    SECRET_KEY = 'secret_key'
+    EMAIL_BACKEND = "common.mail.backend.LocmemEmailBackend"
+
+    SECRET_KEY = Development.SECRET_KEY
 
 
 class Production(Common):
-    SECURE_BROWSER_XSS_FILTER = True
-    SESSION_COOKIE_SECURE = True
+    ALLOWED_HOSTS = values.ListValue(environ_prefix="", default=[])
 
     MIDDLEWARE = [
-        'django.middleware.http.ConditionalGetMiddleware',
-        'django.middleware.gzip.GZipMiddleware',
+        "django.middleware.http.ConditionalGetMiddleware",
+        "django.middleware.gzip.GZipMiddleware",
     ] + Common.MIDDLEWARE
+
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # see https://docs.djangoproject.com/en/dev/ref/middleware/#http-strict-transport-security
+    SECURE_HSTS_SECONDS = values.IntegerValue(environ_prefix="", default=3600)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_REFERRER_POLICY = "same-origin"

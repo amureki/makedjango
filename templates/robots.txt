@@ -1,0 +1,5 @@
+User-agent: *
+# https://en.wikipedia.org/wiki/Three_Laws_of_Robotics
+Disallow: /harming/humans
+Disallow: /ignoring/human/orders
+Disallow: /harm/to/self

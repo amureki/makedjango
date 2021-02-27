@@ -6,10 +6,10 @@ Django project template for a quick prototyping.
 
 ```bash
 $ django-admin startproject \
-  --template=https://github.com/amureki/makedjango/archive/master.zip \
-  --extension=py,md,env \
+  --template=https://github.com/amureki/makedjango/archive/main.zip \
+  --extension=py,md \
   project_name
 $ cd project_name
-$ mv example.env .env
-$ pipenv install --dev
+$ pip install poetry
+$ poetry install --no-root
 ```
