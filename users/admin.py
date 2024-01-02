@@ -1,14 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db.models.functions import Collate
 
-from users.forms import UserChangeForm, UserCreationForm
 from users.models import User
 
 
 class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("full_name",)}),
+        ("Personal info", {"fields": ("name", "username")}),
         (
             "Permissions",
             {
@@ -28,15 +28,23 @@ class UserAdmin(BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2"),
+                "fields": ("email", "username", "password1", "password2"),
             },
         ),
     )
-    form = UserChangeForm
-    add_form = UserCreationForm
-    list_display = ("email", "full_name", "is_staff")
-    search_fields = ("email", "full_name")
+    list_display = ("email", "username", "is_staff")
+    search_fields = ("email_deterministic", "username_deterministic")
     ordering = ("email",)
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                email_deterministic=Collate("email", collation="und-x-icu"),
+                username_deterministic=Collate("username", collation="und-x-icu"),
+            )
+        )
 
 
 admin.site.register(User, UserAdmin)

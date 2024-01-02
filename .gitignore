@@ -29,6 +29,7 @@ nosetests.xml
 
 _static
 _media
+media/
 
 .env
 .venv
@@ -41,3 +42,14 @@ env
 
 # debuging maps
 *.map
+
+# node
+node_modules/
+
+# generated assets
+*.min.js
+frontend/static/
+_static/
+
+# Backups
+latest.dump

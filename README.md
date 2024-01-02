@@ -10,6 +10,5 @@ $ django-admin startproject \
   --extension=py,md \
   project_name
 $ cd project_name
-$ pip install poetry
-$ poetry install --no-root
+$ pip install -r requirements.txt
 ```

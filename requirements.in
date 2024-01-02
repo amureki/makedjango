@@ -1,0 +1,7 @@
+django
+django-environ
+django-extensions
+psycopg[binary]
+sentry-sdk[django]
+whitenoise
+redis[hiredis]

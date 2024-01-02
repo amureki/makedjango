@@ -3,13 +3,15 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from django.core.mail import send_mail
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+from users import validators
 
 
 class UserManager(BaseUserManager):
-    def _create_user(self, email, password, is_staff, is_superuser, **extra_fields):
+    def _create_user(self, email, username, password, is_staff, is_superuser, **extra_fields):
         """Create and save a `User` with the given email and password."""
         now = timezone.now()
         if not email:
@@ -17,6 +19,7 @@ class UserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(
             email=email,
+            username=username,
             is_staff=is_staff,
             is_active=True,
             is_superuser=is_superuser,
@@ -28,66 +31,64 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_user(self, email=None, password=None, **extra_fields):
-        return self._create_user(email, password, False, False, **extra_fields)
+    def create_user(self, email=None, username=None, password=None, **extra_fields):
+        return self._create_user(email, username, password, False, False, **extra_fields)
 
-    def create_superuser(self, email, password, **extra_fields):
-        return self._create_user(email, password, True, True, **extra_fields)
+    def create_superuser(self, email, username, password, **extra_fields):
+        return self._create_user(email, username, password, True, True, **extra_fields)
 
 
-class SimpleIdentityMixin(models.Model):
-    """A mixin class that provides a first name/last name representation of user identity."""
+class User(AbstractBaseUser, PermissionsMixin):
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
-    full_name = models.CharField("Full name", max_length=200, blank=True)
+    objects = UserManager()
+
+    email = models.EmailField(
+        "email address",
+        max_length=254,
+        unique=True,
+        db_collation="case_insensitive",
+        validators=[validators.EmailValidator()],
+    )
+    username = models.CharField(
+        "username",
+        max_length=20,
+        unique=True,
+        db_collation="case_insensitive",
+        error_messages={
+            "unique": _("A user with that username already exists."),
+        },
+        validators=[validators.UsernameValidator()],
+    )
+    name = models.CharField("name", max_length=70, blank=True)
+
     is_staff = models.BooleanField(
-        "Staff status",
+        "staff status",
         default=False,
         help_text="Designates whether the user can log into the admin site.",
     )
     is_active = models.BooleanField(
-        "Active",
+        "active",
         default=True,
         help_text="Designates whether this user should be treated as active. "
         "Unselect this instead of deleting accounts.",
     )
-    date_joined = models.DateTimeField("Date joined", default=timezone.now)
+    date_joined = models.DateTimeField("date joined", default=timezone.now)
 
     class Meta:
-        abstract = True
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 
-    def get_full_name(self):
-        """Return the full name of the user."""
-        return self.full_name
+    def __str__(self):
+        return self.username
 
+    def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
 
-class AbstractUser(SimpleIdentityMixin, PermissionsMixin, AbstractBaseUser):
-    """
-    An abstract base class implementing a fully featured User model.
-    This model includes admin-compliant permissions and uses email as a username.
-    All fields other than email and password are optional.
-    """
-
-    email = models.EmailField("Email address", max_length=254, unique=True)
-
-    objects = UserManager()
-
-    EMAIL_FIELD = "email"
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["full_name"]
-
-    class Meta:
-        abstract = True
-        verbose_name = "User"
-        verbose_name_plural = "Users"
-
-    def email_user(self, subject, message, from_email=None, to_emails=None, **kwargs):
-        """Send an email to this user."""
-        if to_emails is None:
-            to_emails = [self.email]
-
-        send_mail(subject, message, from_email, to_emails, **kwargs)
-
-
-class User(AbstractUser):
-    """Final user class that should be instantiated."""
-    pass
+    def anonymize(self):
+        self.email = self.name = ""
+        self.is_active = False
+        self.save(update_fields=["email", "name", "is_active"])
