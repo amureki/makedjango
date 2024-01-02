@@ -6,7 +6,7 @@ authors = ["Rust Saiargaliev"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-django = "^3.1.7"
+django = "^3.1.14"
 django-configurations = "^2.2"
 django-environ = "^0.4.5"
 django-extensions = "^3.1.1"
