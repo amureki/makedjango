@@ -13,6 +13,13 @@ urlpatterns = [
             content_type="text/plain",
         ),
     ),
+    path(
+        "security.txt",
+        TemplateView.as_view(
+            template_name="security.txt",
+            content_type="text/plain",
+        ),
+    ),
 ]
 
 if settings.DEBUG:

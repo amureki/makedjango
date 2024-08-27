@@ -1,0 +1,2 @@
+Contact: mailto:security@example.com
+Expires: 2028-01-01T12:00:00.000Z

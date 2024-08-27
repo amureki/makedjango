@@ -1,5 +1,8 @@
+[project]
+requires-python = ">=3.12"
+
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "core.settings"
+DJANGO_SETTINGS_MODULE = "app.settings"
 addopts = [
   "--tb=short",
   "--fail-on-template-vars",
@@ -46,4 +49,4 @@ force-wrap-aliases=true
 django = ["django"]
 
 [tool.ruff.pydocstyle]
-convention = "google"
+convention = "pep257"

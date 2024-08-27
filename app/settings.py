@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.humanize",
     "django_extensions",
-    "core",
+    "app",
     "users",
 ]
 
@@ -61,7 +61,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+ROOT_URLCONF = "app.urls"
 
 SECRET_KEY = env("SECRET_KEY", default=get_random_secret_key())
 
@@ -71,7 +71,7 @@ STATIC_ROOT = BASE_DIR / "_static"
 STATIC_URL = "/static/"
 STATICFILES_DIRS = []
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-WHITENOISE_ROOT = BASE_DIR / "_static" / "core"
+WHITENOISE_ROOT = BASE_DIR / "_static" / "app"
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
@@ -98,7 +98,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-WSGI_APPLICATION = "core.wsgi.application"
+WSGI_APPLICATION = "app.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
